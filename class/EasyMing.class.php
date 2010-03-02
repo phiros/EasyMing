@@ -41,6 +41,8 @@ class primitiveFormen extends allgemein {
 	public $changedFuellFarbe;
 	
 	private $fuellFarbe;
+	public $linienDicke;
+	public $linienFarbe;
 
 	/**
 	 * Legt die Liniendicke und Farbe fuer zu malende Objekte fest
@@ -49,9 +51,12 @@ class primitiveFormen extends allgemein {
 	 * @param string $farbe
 	 */
 	public function linienArt($dicke, $farbe) {
+		$this->linienDicke = $dicke;
+		$this->linienFarbe = $farbe;
+		
 		$farbe = self::hexfarbeToRGB($farbe);
 		$this->SWFShape->setLine($dicke,$farbe[0],$farbe[1],$farbe[2]);
-		$this->changedLinienArt = true;
+		$this->changedLinienArt = true;		
 	}
 	
 	/**
@@ -216,6 +221,8 @@ class Arbeitsblatt extends allgemein {
 	 */
 	public function addElement($object)
 	{
+		$object = $object->zeichne();
+				
 		if(is_object($object->SWFShape))
 		{
 			$this->SWFMovie->add($object->SWFShape);
@@ -427,6 +434,7 @@ class point2d extends primitiveFormen {
 	private $y_koord;
 	private $form;
 	private $radius;
+	private $zeichen;
 
 	
 	function __construct($bezeichnung = "P", $x_koord = 0, $y_koord = 0, $form = "kreis", $radius = 10) {		
@@ -436,10 +444,17 @@ class point2d extends primitiveFormen {
 		$this->radius  = $radius;
 		$this->bezeichnung = $bezeichnung;
 		
-		if($form == "kreis")
+		if( $this->form == "kreis")
 		{
 			$kreis = new kreis($this->x_koord, $this->y_koord, $this->radius);
-			$this->SWFShape = $kreis->SWFShape;					
+			$this->SWFShape = $kreis->SWFShape;
+			$this->zeichen = $kreis;					
+		} 
+		elseif( $this->form == "kreuz") 
+		{
+			$kreuz = new kreuz($this->x_koord, $this->y_koord, $this->radius);
+			$this->SWFShape = $kreuz->SWFShape;
+			$this->zeichen = $kreuz;
 		}		
 	}
 
@@ -448,10 +463,17 @@ class point2d extends primitiveFormen {
 		{
 			$this->linienArt(5,black);
 		}
+		
 		$this->SWFShape->movePenTo($this->x_koord,$this->y_koord);
+		
 		if($this->form == "kreis")
 		{
 			$kreis = $this->SWFShape->drawCircle($this->radius);			
+		} 
+		elseif( $this->form == "kreuz")
+		{
+			if($this->changedLinienArt) $this->zeichen->linienArt($this->linienDicke, $this->linienFarbe);
+			$kreuz = $this->zeichen->zeichne();				
 		}
 				
 		$text = new Text($this->bezeichnung, $this->x_koord + $this->radius + 2, $this->y_koord + 2);
@@ -459,6 +481,48 @@ class point2d extends primitiveFormen {
 			
 		return array("SWFShape" => $this->SWFShape, "SWFText" => $text_gezeichnet->SWFText);
 	}
+}
+
+class kreuz extends primitiveFormen {
+	private $x_koord;
+	private $y_koord;
+	private $kanten_laenge;
+	private $schnittwinkel;
+
+	function __construct($x_koord = 0, $y_koord = 0, $kanten_laenge = 20, $schnittwinkel = 90) {		
+		$this->x_koord = $x_koord;
+		$this->y_koord = $y_koord;
+		$this->kanten_laenge = $kanten_laenge;
+		$this->schnittwinkel = $schnittwinkel;
+		
+		$this->SWFShape = new SWFShape();
+	}
+
+	public function zeichne() {
+		if(!($this->changedLinienArt))
+		{
+			$this->linienArt(5,black);
+		} 
+		else 
+		{
+			$this->linienArt($this->linienDicke, $this->linienFarbe);
+		}	
+		
+		$beta = 90 - ($this->schnittwinkel/2);
+		$b = ($beta * M_PI / 180);	
+		$hk = $this->kanten_laenge;
+		
+		$this->SWFShape->movePenTo($this->x_koord - $hk * cos($b),$this->y_koord + $hk * sin($b));
+		$this->SWFShape->drawLineTo($this->x_koord + $hk * cos($b),$this->y_koord - $hk * sin($b));
+		$this->SWFShape->movePenTo($this->x_koord + $hk * cos($b),$this->y_koord + $hk * sin($b));
+		$this->SWFShape->drawLineTo($this->x_koord - $hk * cos($b),$this->y_koord - $hk * sin($b));
+		
+		if($this->changedFuellFarbe) {
+			$this->fuellFarbe($this->fuellFarbe);
+		}
+				
+		return $this;
+	}	
 }
 
 class Text extends allgemein {
