@@ -525,6 +525,97 @@ class kreuz extends primitiveFormen {
 	}	
 }
 
+class rechteck extends primitiveFormen {
+	private $x_koord;
+	private $y_koord;
+	private $hoehe;
+	private $breite;
+	private $drehpunkt;
+	private $winkel_zur_waagrechten;
+	private $punkt_positionen;
+
+	function __construct($x_koord = 0, $y_koord = 0, $hoehe = 20, $breite=30, $drehpunkt = "lu", $winkel_zur_waagrechten = 90) {		
+		$this->x_koord = $x_koord;
+		$this->y_koord = $y_koord;
+		$this->hoehe = $hoehe;
+		$this->breite = $breite;
+		$this->drehpunkt = $drehpunkt;
+		$this->winkel_zur_waagrechten = $winkel_zur_waagrechten;
+		$this->punkt_positionen = array("lu","lo","ro","ru");
+		
+		$this->SWFShape = new SWFShape();
+	}
+
+	public function zeichne() {
+		if(!($this->changedLinienArt))
+		{
+			$this->linienArt(5,black);
+		} 
+		else 
+		{
+			$this->linienArt($this->linienDicke, $this->linienFarbe);
+		}	
+		
+		$this->rekRechteck($this->x_koord, $this->y_koord, $this->hoehe, $this->breite, $this->drehpunkt, $this->winkel_zur_waagrechten, 0, $this->drehpunkt);
+		
+		if($this->changedFuellFarbe) {
+			$this->fuellFarbe($this->fuellFarbe);
+		}
+				
+		return $this;
+	}
+
+	private function rekRechteck($x_koord = 0, $y_koord = 0, $hoehe = 20, $breite=30, $drehpunkt = "lu", $drehwinkel = 90, $start= 0, $startpunkt="lu") {
+		if($start == 1 && $drehpunkt == $startpunkt) {
+			return 0;
+		} else {
+			if($start == 0) $start = 1;
+				
+			
+			switch($drehpunkt) {
+				case "lu":
+					//echo "lu";
+					$b = ($drehwinkel * M_PI / 180);
+					$this->SWFShape->movePenTo($x_koord,$y_koord);					
+					$this->SWFShape->drawLineTo($x_koord + cos($b)*$breite, $y_koord + sin($b)*$breite);
+					$drehpunkt = "ru";
+					$x_koord = $x_koord + cos($b)*$breite;
+					$y_koord = $y_koord + sin($b)*$breite;										
+					break;
+				case "lo":
+					//echo "lo";
+					$b = ((180 - ($drehwinkel+90)) * M_PI / 180);
+					$this->SWFShape->movePenTo($x_koord,$y_koord);
+					$this->SWFShape->drawLineTo($x_koord + (cos($b)*$hoehe), $y_koord - (sin($b)*$hoehe));
+					$drehpunkt = "lu";
+					$x_koord = $x_koord + cos($b)*$hoehe;
+					$y_koord = $y_koord - sin($b)*$hoehe;	
+					break;					
+				case "ro":
+					//echo "ro";
+					$b = ($drehwinkel * M_PI / 180);
+					$this->SWFShape->movePenTo($x_koord,$y_koord);
+					$this->SWFShape->drawLineTo($x_koord - (cos($b)*$breite), $y_koord - (sin($b)*$breite));
+					$drehpunkt = "lo";
+					$x_koord = $x_koord - (cos($b)*$breite);
+					$y_koord = $y_koord - (sin($b)*$breite);				
+					break;
+				case "ru";
+					//echo "ru";
+					$b = ((180 - ($drehwinkel+90)) * M_PI / 180);
+					$this->SWFShape->movePenTo($x_koord,$y_koord);
+					$this->SWFShape->drawLineTo($x_koord - cos($b)*$hoehe, $y_koord + sin($b)*$hoehe);
+					$drehpunkt = "ro";
+					$x_koord = $x_koord - cos($b)*$hoehe;
+					$y_koord = $y_koord + sin($b)*$hoehe;	
+					break;			
+			}
+			return $this->rekRechteck($x_koord, $y_koord, $hoehe, $breite, $drehpunkt, $drehwinkel, $start, $startpunkt);	
+		}				
+	}
+	
+}
+
 class Text extends allgemein {
 
 	private $x_koord;
